@@ -14,6 +14,7 @@ final class BesConfig
      * @param  array<string, float>  $rawScoreWeights
      * @param  array<string, float>  $thresholds
      * @param  array<string, string|null>  $models
+     * @param  array<string, mixed>  $retrievalContext
      */
     public function __construct(
         public int $budget = 30,
@@ -51,6 +52,7 @@ final class BesConfig
         ],
         public ?string $provider = null,
         public array $models = [],
+        public array $retrievalContext = [],
     ) {}
 
     /**
@@ -80,6 +82,7 @@ final class BesConfig
             thresholds: (array) ($config['thresholds'] ?? $defaults->thresholds),
             provider: $config['provider'] ?? null,
             models: (array) ($config['models'] ?? []),
+            retrievalContext: (array) ($config['retrieval_context'] ?? []),
         );
     }
 
@@ -118,6 +121,7 @@ final class BesConfig
             'thresholds' => $this->thresholds,
             'provider' => $this->provider,
             'models' => $this->models,
+            'retrieval_context' => $this->retrievalContext,
         ];
     }
 }

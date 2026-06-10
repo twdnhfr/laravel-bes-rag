@@ -116,11 +116,14 @@ class EngineFactory
 
         $synthesizer = new AnswerSynthesizer($llm, $config->model('synthesize'));
 
+        $reranker = $overrides['reranker']
+            ?? ($this->container->bound(Reranker::class) ? $this->container->make(Reranker::class) : null);
+
         $expander = new TrailExpander(
             $retriever,
             $llm,
             $synthesizer,
-            $overrides['reranker'] ?? null,
+            $reranker,
             $config->model('expand'),
         );
 

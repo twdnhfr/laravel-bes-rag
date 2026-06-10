@@ -1,5 +1,7 @@
 <?php
 
+use Twdnhfr\BesRag\Contracts\Retriever;
+use Twdnhfr\BesRag\Data\RetrievalQuery;
 use Twdnhfr\BesRag\Facades\BesRag;
 use Twdnhfr\BesRag\Models\Run;
 use Twdnhfr\BesRag\Testing\FakeEmbedder;
@@ -77,4 +79,39 @@ it('stops deterministically on the llm call cap', function () {
     // was cut off by the call cap, not the step budget.
     expect($result->status())->toBe(Run::STATUS_COMPLETED)
         ->and($result->run()->used_budget)->toBeLessThan(8);
+});
+
+it('delivers the retrieval context to every retriever call', function () {
+    $retriever = new class(TeslaFixture::retriever()) implements Retriever
+    {
+        /** @var list<array<string, mixed>> */
+        public array $seen = [];
+
+        public function __construct(private readonly Retriever $inner) {}
+
+        public function retrieve(RetrievalQuery $query, int $topK = 5): array
+        {
+            $this->seen[] = $query->filters;
+
+            return $this->inner->retrieve($query, $topK);
+        }
+    };
+
+    $result = BesRag::make()
+        ->retriever($retriever)
+        ->llm(TeslaFixture::llm())
+        ->embedder(new FakeEmbedder)
+        ->withConfig(TeslaFixture::configOverrides())
+        ->retrievalContext(['brain_id' => 42])
+        ->answer(TeslaFixture::QUESTION);
+
+    expect($result->status())->toBe(Run::STATUS_COMPLETED)
+        ->and($retriever->seen)->not->toBeEmpty();
+
+    foreach ($retriever->seen as $filters) {
+        expect($filters)->toBe(['brain_id' => 42]);
+    }
+
+    // The context survives serialization onto the run row (queue pipeline).
+    expect($result->run()->config_json['retrieval_context'] ?? null)->toBe(['brain_id' => 42]);
 });

@@ -195,6 +195,20 @@ class PendingSearch
     }
 
     /**
+     * App-side scoping for every retrieval of this run (e.g. tenant or
+     * collection ids). Persisted with the run config, so the queue pipeline
+     * sees it too; delivered to the retriever as RetrievalQuery->filters.
+     *
+     * @param  array<string, mixed>  $context
+     */
+    public function retrievalContext(array $context): static
+    {
+        $this->configOverrides['retrieval_context'] = $context;
+
+        return $this;
+    }
+
+    /**
      * @param  array<string, float>  $mix
      */
     public function operatorMix(array $mix): static

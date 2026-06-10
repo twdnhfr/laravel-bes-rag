@@ -61,6 +61,12 @@ $result->evidenceTrail();  // the full winning trail for auditing
 $result->scores();         // raw / backward / effective + per-goal coverage
 ```
 
+Multi-tenant stores scope retrieval per run via `->retrievalContext([...])` — the array is persisted with the run (so queue workers see it) and arrives at your retriever as `RetrievalQuery->filters`:
+
+```php
+BesRag::make()->retrievalContext(['brain_id' => $brain->id])->dispatch($question);
+```
+
 ### Async via queue pipeline
 
 ```php

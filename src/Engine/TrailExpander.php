@@ -167,7 +167,7 @@ class TrailExpander implements CandidateGenerator
 
         foreach ($queries as $query) {
             $chunks = $this->retriever->retrieve(
-                new RetrievalQuery($query, goalId: $goalId),
+                new RetrievalQuery($query, $run->config->retrievalContext, $goalId),
                 $run->config->topK,
             );
 
