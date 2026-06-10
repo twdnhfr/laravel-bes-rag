@@ -1,0 +1,104 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('bes_runs', function (Blueprint $table) {
+            $table->id();
+            $table->text('question');
+            $table->string('status')->default('pending')->index();
+            $table->unsignedInteger('budget')->default(30);
+            $table->unsignedInteger('used_budget')->default(0);
+            $table->unsignedInteger('llm_calls')->default(0);
+            $table->unsignedInteger('steps_without_progress')->default(0);
+            $table->float('best_score')->default(0);
+            $table->json('config_json');
+            $table->unsignedBigInteger('final_candidate_id')->nullable();
+            $table->longText('answer')->nullable();
+            $table->text('error')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('bes_goal_nodes', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('run_id')->constrained('bes_runs')->cascadeOnDelete();
+            $table->foreignId('parent_id')->nullable()->constrained('bes_goal_nodes')->cascadeOnDelete();
+            $table->string('goal_key');
+            $table->unsignedInteger('level')->default(0);
+            $table->text('description');
+            $table->json('depends_on_json');
+            $table->json('evidence_required_json');
+            $table->json('suggested_queries_json');
+            $table->string('verifier_type')->default('semantic_query_coverage');
+            $table->json('verifier_params_json');
+            $table->timestamps();
+
+            $table->unique(['run_id', 'goal_key']);
+        });
+
+        Schema::create('bes_candidates', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('run_id')->constrained('bes_runs')->cascadeOnDelete();
+            $table->foreignId('parent_id')->nullable()->constrained('bes_candidates')->nullOnDelete();
+            $table->json('parent_ids_json');
+            $table->string('operation')->default('seed');
+            $table->boolean('terminal')->default(false);
+            $table->boolean('active')->default(true)->index();
+            $table->float('raw_score')->default(0);
+            $table->float('backward_score')->default(0);
+            $table->float('effective_score')->default(0)->index();
+            $table->json('raw_components_json')->nullable();
+            $table->longText('answer_text')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('bes_candidate_steps', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('candidate_id')->constrained('bes_candidates')->cascadeOnDelete();
+            $table->string('type');
+            $table->json('content_json');
+            $table->string('goal_key')->nullable();
+            $table->unsignedInteger('position')->default(0);
+            $table->timestamps();
+        });
+
+        Schema::create('bes_evidence_chunks', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('candidate_id')->constrained('bes_candidates')->cascadeOnDelete();
+            $table->foreignId('step_id')->nullable()->constrained('bes_candidate_steps')->nullOnDelete();
+            $table->string('document_id')->index();
+            $table->string('chunk_id');
+            $table->longText('text');
+            $table->json('metadata_json');
+            $table->float('score')->default(0);
+            $table->timestamps();
+        });
+
+        Schema::create('bes_goal_scores', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('candidate_id')->constrained('bes_candidates')->cascadeOnDelete();
+            $table->foreignId('goal_node_id')->constrained('bes_goal_nodes')->cascadeOnDelete();
+            $table->string('goal_key');
+            $table->float('score')->default(0);
+            $table->json('reason_json');
+            $table->timestamps();
+
+            $table->unique(['candidate_id', 'goal_node_id']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('bes_goal_scores');
+        Schema::dropIfExists('bes_evidence_chunks');
+        Schema::dropIfExists('bes_candidate_steps');
+        Schema::dropIfExists('bes_candidates');
+        Schema::dropIfExists('bes_goal_nodes');
+        Schema::dropIfExists('bes_runs');
+    }
+};
