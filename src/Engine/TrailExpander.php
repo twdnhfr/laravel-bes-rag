@@ -36,7 +36,7 @@ class TrailExpander implements CandidateGenerator
         $trail->operation = Operation::Seed;
 
         $queries = $this->seedQueries($run, $seedIndex);
-        $goal = $run->goalTree->openGoals($trail)[0] ?? null;
+        $goal = $run->goalTree->openGoals($trail, $this->satisfiedThreshold($run))[0] ?? null;
 
         $this->executeSearch($run, $trail, $queries, $goal);
 
@@ -46,7 +46,7 @@ class TrailExpander implements CandidateGenerator
     public function expand(SearchRun $run, EvidenceTrail $parent): EvidenceTrail
     {
         $child = $parent->childCopy(Operation::Expand);
-        $goal = $run->goalTree->openGoals($child)[0] ?? null;
+        $goal = $run->goalTree->openGoals($child, $this->satisfiedThreshold($run))[0] ?? null;
 
         if ($goal === null) {
             // All goals covered — produce/refresh the terminal answer draft.
@@ -62,13 +62,18 @@ class TrailExpander implements CandidateGenerator
         $this->executeSearch($run, $child, $generated['queries'], $goal, $generated['note']);
 
         // Draft an answer once the frontier is empty after this expansion.
-        if ($run->goalTree->openGoals($child) === []) {
+        if ($run->goalTree->openGoals($child, $this->satisfiedThreshold($run)) === []) {
             $child->answerDraft = $this->synthesizer->synthesize($run->question(), $child);
             $child->terminal = true;
             $child->addStep(new TrailStep(StepType::Answer, ['answer' => $child->answerDraft]));
         }
 
         return $child;
+    }
+
+    protected function satisfiedThreshold(SearchRun $run): float
+    {
+        return $run->config->threshold('goal_satisfied', 0.7);
     }
 
     /**

@@ -115,3 +115,21 @@ it('delivers the retrieval context to every retriever call', function () {
     // The context survives serialization onto the run row (queue pipeline).
     expect($result->run()->config_json['retrieval_context'] ?? null)->toBe(['brain_id' => 42]);
 });
+
+it('stops early once a grounded terminal trail satisfies all goals', function () {
+    $result = BesRag::make()
+        ->retriever(TeslaFixture::retriever())
+        ->llm(TeslaFixture::llm())
+        ->embedder(new FakeEmbedder)
+        ->withConfig(array_replace(TeslaFixture::configOverrides(), ['budget' => 20]))
+        ->answer(TeslaFixture::QUESTION);
+
+    $run = $result->run();
+
+    // The early-stop must fire well before the budget is exhausted —
+    // burning the full budget on an answerable question is the bug this
+    // condition exists to prevent.
+    expect($result->status())->toBe(Run::STATUS_COMPLETED)
+        ->and($result->answer())->toContain('Eberhard')
+        ->and($run->used_budget)->toBeLessThan(20);
+});

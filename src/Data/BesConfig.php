@@ -49,6 +49,7 @@ final class BesConfig
             'semantic_coverage' => 0.72,
             'grounded_answer' => 0.80,
             'citation_support' => 0.80,
+            'goal_satisfied' => 0.70,
         ],
         public ?string $provider = null,
         public array $models = [],

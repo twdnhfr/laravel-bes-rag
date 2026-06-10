@@ -173,13 +173,32 @@ class Engine
             return;
         }
 
-        $unsatisfied = $search->goalTree->unsatisfiedLeaves($best);
+        $threshold = $search->config->threshold('goal_satisfied', 0.7);
+        $open = $search->goalTree->openGoals($best, $threshold);
+
+        // Growing the tree only makes sense while the remaining budget can
+        // still cover new goals on top of the current frontier; otherwise
+        // expansion just guarantees the run burns its full budget.
+        $remaining = $search->config->budget - $run->used_budget;
+
+        if ($remaining <= count($open) + 1) {
+            return;
+        }
+
+        $unsatisfied = $search->goalTree->unsatisfiedLeaves($best, $threshold);
+        $touched = $best->touchedGoalIds();
 
         $target = null;
         $lowest = PHP_FLOAT_MAX;
 
         foreach ($unsatisfied as $leaf) {
             if ($leaf->level >= $search->config->maxGoalDepth) {
+                continue;
+            }
+
+            // Only refine goals the search has actually worked on and still
+            // failed — an untouched leaf needs forward search, not subdivision.
+            if (! in_array($leaf->id, $touched, true)) {
                 continue;
             }
 
@@ -296,8 +315,12 @@ class Engine
 
         $best = $search->bestTerminal();
 
+        // Done: a terminal trail whose frontier is (still) empty against the
+        // current tree and whose answer is grounded above threshold. Checked
+        // live via openGoals — a fixed backward-score bar would be
+        // unreachable on real verifiers that never return a perfect 1.0.
         if ($best !== null
-            && $best->backwardScore >= 0.999
+            && $search->goalTree->openGoals($best, $config->threshold('goal_satisfied', 0.7)) === []
             && ($best->rawComponents['grounded_answer'] ?? 0.0) >= $config->threshold('grounded_answer', 0.8)) {
             return true;
         }

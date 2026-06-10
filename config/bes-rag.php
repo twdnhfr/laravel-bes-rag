@@ -86,6 +86,12 @@ return [
         'semantic_coverage' => 0.72,
         'grounded_answer' => 0.80,
         'citation_support' => 0.80,
+
+        // A goal counts as satisfied once its verifier score reaches this
+        // value. Verifiers rarely return a perfect 1.0 on real embedders,
+        // so demanding ~1.0 here would make the early-stop unreachable and
+        // every run burn its full budget.
+        'goal_satisfied' => 0.70,
     ],
 
     /*

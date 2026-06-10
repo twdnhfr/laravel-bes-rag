@@ -109,7 +109,7 @@ class EngineFactory
         };
 
         $scorer = new TrailScorer(
-            new RecursiveGoalScorer($registry, $config->goalAlpha),
+            new RecursiveGoalScorer($registry, $config->goalAlpha, $config->threshold('goal_satisfied', 0.7)),
             new RawScoreCalculator($judge),
             $scorePolicy,
         );
