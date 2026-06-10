@@ -1,5 +1,7 @@
 # laravel-bes-rag
 
+![laravel-bes-rag — Deep RAG for Laravel powered by Bidirectional Evolutionary Search](art/header.webp)
+
 **A deep RAG search orchestrator for Laravel**, based on [Bidirectional Evolutionary Search (BES)](https://arxiv.org/abs/2605.28814): instead of `question → top-k → answer`, hard multi-hop questions are decomposed into checkable sub-goals, multiple *evidence trails* are evolved against them, and the final answer is synthesized strictly from cited evidence — with a full audit trail of every query, chunk and score.
 
 Built on the [Laravel AI SDK](https://github.com/laravel/ai) (`laravel/ai`) as the provider-agnostic engine for text generation, structured output and embeddings.
