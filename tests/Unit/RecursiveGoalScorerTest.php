@@ -45,10 +45,29 @@ it('blends self and child scores with alpha', function () {
     $tree = new GoalTree([$root]);
     $trail = new EvidenceTrail;
 
-    $scorer = new RecursiveGoalScorer($registry, alpha: 0.3);
+    // Threshold 1.0 disables satisfaction snapping to test the pure blend.
+    $scorer = new RecursiveGoalScorer($registry, alpha: 0.3, satisfiedThreshold: 1.0);
 
     // 0.3 * 0.2 + 0.7 * mean(0.4, 0.8) = 0.06 + 0.42 = 0.48
     expect($scorer->score($tree, $trail))->toEqualWithDelta(0.48, 1e-9);
+});
+
+it('snaps goals above the satisfaction threshold to 1.0', function () {
+    $registry = new VerifierRegistry;
+    $registry->register('fixed', fixedVerifier(['g1' => 0.75, 'g2' => 0.5]));
+
+    $tree = new GoalTree([
+        new GoalNode('g1', 'adequately covered', verifierType: 'fixed'),
+        new GoalNode('g2', 'still open', verifierType: 'fixed'),
+    ]);
+    $trail = new EvidenceTrail;
+
+    $scorer = new RecursiveGoalScorer($registry, alpha: 0.3, satisfiedThreshold: 0.7);
+
+    // g1 (0.75 >= 0.7) counts as fully satisfied, g2 stays at its raw score.
+    expect($scorer->score($tree, $trail))->toEqualWithDelta(0.75, 1e-9)
+        ->and($trail->goalScores['g1'])->toEqualWithDelta(1.0, 1e-9)
+        ->and($trail->goalScores['g2'])->toEqualWithDelta(0.5, 1e-9);
 });
 
 it('short-circuits satisfied nodes to 1.0 regardless of children', function () {

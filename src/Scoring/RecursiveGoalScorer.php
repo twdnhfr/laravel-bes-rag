@@ -23,7 +23,7 @@ class RecursiveGoalScorer
     public function __construct(
         protected VerifierRegistry $verifiers,
         protected float $alpha = 0.3,
-        protected float $satisfiedEpsilon = 1e-6,
+        protected float $satisfiedThreshold = 0.7,
     ) {}
 
     /**
@@ -66,7 +66,10 @@ class RecursiveGoalScorer
     {
         $self = $trail->goalScores[$node->id] ?? 0.0;
 
-        if ($self >= 1.0 - $this->satisfiedEpsilon) {
+        // Verifiers rarely return a perfect 1.0 on real embedders/judges;
+        // "adequately covered" must short-circuit, or trails can never
+        // satisfy the tree and the early-stop becomes unreachable.
+        if ($self >= $this->satisfiedThreshold) {
             return 1.0;
         }
 

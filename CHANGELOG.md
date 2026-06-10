@@ -2,6 +2,15 @@
 
 All notable changes to `laravel-bes-rag` will be documented in this file.
 
+## v0.2.0 - 2026-06-10
+
+Fixed — runs always burned their full step budget, even on simple questions:
+
+- New `thresholds.goal_satisfied` (default 0.70): a goal now counts as satisfied at this verifier score instead of requiring ~1.0, which real embedders/judges almost never return. Applied consistently in the goal scorer (satisfaction snapping), the forward-search frontier (`openGoals`) and dependency gating.
+- The grounded early-stop checks the live frontier (`openGoals === []`) instead of the unreachable `backward_score >= 0.999`.
+- Backward goal-tree expansion is now guarded: it only refines leaves the best trail has actually worked on and still failed, and is skipped when the remaining budget cannot cover the current frontier anyway — previously the tree grew faster than trails could satisfy it, making termination impossible.
+- `RecursiveGoalScorer` constructor: `satisfiedEpsilon` replaced by `satisfiedThreshold` (default 0.7).
+
 ## v0.1.0 - 2026-06-10
 
 Initial release:
