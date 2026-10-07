@@ -2,6 +2,11 @@
 
 All notable changes to `laravel-bes-rag` will be documented in this file.
 
+## v0.3.0 - 2026-10-07
+
+- Requires `laravel/ai` ^1.1.0 (dependency bump; no code changes). Includes the unreleased bumps through `laravel/ai` 0.9, 0.10 and 0.11. Apps on `laravel/ai` 0.x should stay on v0.2.1.
+- `laravel/ai` 1.0 requires `laravel/mcp` 1.0 in the consuming app.
+
 ## v0.2.1 - 2026-06-10
 
 - Requires `laravel/ai` ^0.8.0 (dependency bump; no code changes). Same fix set as v0.2.0, re-tagged on top of the dependency update because the published v0.2.0 reference is immutable on Packagist.
